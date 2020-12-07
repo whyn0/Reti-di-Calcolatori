@@ -26,8 +26,6 @@ void clearWinSock(){
 
 int sendAll(int socket, void* buffer){
 	char *ptr = (char*) buffer;//cast
-	char *len;
-	//sprintf(len, "%lu", strlen(ptr));
 	int lenght = strlen(ptr);
 	if(send(socket, &lenght, sizeof(int),0) < 0){
 		printf("[-]sendAll lenght error...");
@@ -45,7 +43,6 @@ int sendAll(int socket, void* buffer){
 int recvAll(int socket, void* buffer){
 	int len_buf;
 	int bytesRcv;
-	//ricevo lunghezza
 	if((bytesRcv = recv(socket, &len_buf, BUFFERSIZE - 1, 0)) < 0){
 		printf("[-]recvAll lenght error...");
 		return -1;
@@ -61,44 +58,33 @@ int recvAll(int socket, void* buffer){
 }
 void ssend(int socket, void* buffer){
 	char* ptr = (char*) buffer;
-	if (send(socket, ptr, strlen(ptr), 0) != strlen(ptr)) {
+	if (send(socket, ptr, strlen(ptr) + 1, 0) != (strlen(ptr) + 1)) {
 		errorHandler("[-]Send operation failed...");
-		close(socket);
+		closesocket(socket);
 		clearWinSock();
 	}
 }
 
-	char* srecv(int socket){
-	    char buffer[BUFFERSIZE];
-	    int b_rec = 0;
+char* srecv(int socket){
+	char buffer[BUFFERSIZE] = {'\0'};
+	int b_rec = 0;
 
-		if((b_rec = recv(socket, buffer, BUFFERSIZE - 1, 0)) < 0){
-			errorHandler("[-]Recv operation failed...");
-			close(socket);
-			clearWinSock();
-			return NULL;
-		}
-		buffer[b_rec] = '\0';
-		char *result = (char *) malloc(sizeof(char) * strlen(buffer));
-		strcpy(result, buffer);
+	if((b_rec = recv(socket, buffer, BUFFERSIZE, 0)) < 0){
+		errorHandler("[-]Recv operation failed...");
+		closesocket(socket);
+		clearWinSock();
+		return NULL;
+	}
+	char *result = malloc(sizeof(char) * strlen(buffer));
+	strcpy(result, buffer);
 
-		return result;
+	return result;
+}
+void ssrecv(int socket, void* buffer, int size){
+	int b_rec = 0;
+	if((b_rec = recv(socket, (char*)buffer, size, 0)) < 0 ){
+		errorHandler("[-]Recv operation failed...");
+		closesocket(socket);
+		clearWinSock();
 	}
-	void sendInt(int socket, int n){
-		if(send(socket, &n, sizeof(int), 0) != sizeof(int)){
-			errorHandler("[-]Send operation failed...");
-			close(socket);
-			clearWinSock();
-		}
-	}
-	int recvInt(int socket){
-		int b_rec = 0;
-		int n = 0;
-		if((b_rec = recv(socket, &n, sizeof(int), 0)) < 0){
-			errorHandler("[-]Recv operation failed...");
-			close(socket);
-			clearWinSock();
-		}
-		return n;
-	}
-
+}

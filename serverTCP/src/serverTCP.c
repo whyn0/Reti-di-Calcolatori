@@ -17,10 +17,11 @@ int main(int argc, char* argv[]) {
 	int sock;
 	struct sockaddr_in sad;//server address
 	struct sockaddr_in cad;//client address
-	char *buf;
+	char buffer[BUFFERSIZE] = {'\0'};
 
 	//inizializzazione socket windows
 #if defined WIN32
+	//test
 	WSADATA wsaData;
 	int iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
 	if(iResult != 0){
@@ -38,27 +39,20 @@ int main(int argc, char* argv[]) {
 	sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if(sock < 0){
 		errorHandler("[-]Error at socket()!\n");
-		return -1;
-	}
-	int yes = 1;
-	if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes,sizeof(int)) < 0){
-		errorHandler("[-]Options setting failed");
-		close(sock);
 		clearWinSock();
 		return -1;
 	}
-
-
+	memset(&sad, 0 , sizeof(sad));
 	sad.sin_family = AF_INET;
 	sad.sin_addr.s_addr = inet_addr("127.0.0.1");
 	sad.sin_port = htons(port); //port binding
-	memset(&(sad.sin_zero), 0, 8); //zero rest of structure
+ //zero rest of structure
 
 	//binding
 
 	if(bind(sock, (struct sockaddr*)&sad, sizeof(sad)) < 0){
 		errorHandler("[-]Bind() failed");
-		close(sock);
+		closesocket(sock);
 		clearWinSock();
 		return -1;
 	}
@@ -67,7 +61,7 @@ int main(int argc, char* argv[]) {
 
 	if(listen(sock,QLEN) < 0){
 		errorHandler("[-]Listen() failed\n");
-		close(sock);
+		closesocket(sock);
 		clearWinSock();
 		return -1;
 	}
@@ -78,7 +72,7 @@ int main(int argc, char* argv[]) {
 	while(1){
 		if ((new_sock = accept(sock, (struct sockaddr *)&cad, &clientLen)) < 0) {
 		errorHandler("[-]Accept() failed.\n");
-		close(sock);
+		closesocket(sock);
 		clearWinSock();
 		return 0;
 		}
@@ -87,8 +81,8 @@ int main(int argc, char* argv[]) {
 	char* greet = "[+]Connessione avvenuta...";
 	ssend(new_sock, greet);
 	//determino l'operazione
-	buf = srecv(new_sock);
-	char op = *buf;
+	ssrecv(new_sock, buffer, BUFFERSIZE);
+	char op = *buffer;
 	op = toupper(op);
 	char* str_op = malloc(50 * sizeof(char));
 	if(op == 'A'){
@@ -103,8 +97,14 @@ int main(int argc, char* argv[]) {
 		strcpy(str_op, "TERMINE PROCESSO CLIENT");
 	}
 	ssend(new_sock, str_op);//send stringa al client
-	int num1 = recvInt(new_sock);
-	int num2 = recvInt(new_sock);
+
+	int num1;
+	int num2;
+
+	ssrecv(new_sock, buffer, BUFFERSIZE);
+	num1 = *((int *)buffer);
+	ssrecv(new_sock, buffer, BUFFERSIZE);
+	num2 = *((int *)buffer);
 	int result = 0;
 	if(op == 'A'){
 		result = num1 + num2;
@@ -117,9 +117,16 @@ int main(int argc, char* argv[]) {
 				result = num1 / num2;
 			}
 		}
-	sendInt(new_sock, result);
+	memcpy(buffer, &result, sizeof(int));
+	buffer[4] = '\0';
+	ssend(new_sock, buffer);
 
 	}
+	clearWinSock();
+	closesocket(new_sock);
+#if defined WIN32
+	system("pause");
+#endif
 
 	return 0;
 }

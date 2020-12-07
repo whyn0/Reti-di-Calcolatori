@@ -9,8 +9,8 @@
 #define COMMONLIB_H_
 #if defined WIN32
 #include <winsock.h>
-#include <windows.h>
 #else
+#define closesocket close
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -19,9 +19,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#define PORT 27015 // default protocol port number
+#include <errno.h>
+#define PORT 12345 // default protocol port number
 #define QLEN 10
 #define BUFFERSIZE 512
+
 #endif /* COMMONLIB_H_ */
 
 //prototypes
@@ -32,5 +34,6 @@ int sendAll(int socket, void* buffer);
 int recvAll(int socket, void* buffer);
 char* srecv(int socket);
 void ssend(int socket, void* buffer);
-int recvInt(int socket);
-void sendInt(int socket, int n);
+void ssrecv(int socket, void* buffer, int size);
+//int recvInt(int socket);
+//void sendInt(int socket, int n);

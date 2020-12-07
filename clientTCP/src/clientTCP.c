@@ -13,7 +13,8 @@
 int main(void) {
 	int sock;
 	struct sockaddr_in sad;
-	char *buf;
+	char buffer[BUFFERSIZE] = {'\0'};
+
 
 #if defined WIN32
 	WSADATA wsaData;
@@ -27,7 +28,7 @@ int main(void) {
 	sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sock < 0) {
 		errorHandler("[-]Socket creation failed...");
-		close(sock);
+		closesocket(sock);
 		clearWinSock();
 		return -1;
 	}
@@ -41,41 +42,58 @@ int main(void) {
 	if (connect(sock, (struct sockaddr*) &sad, sizeof(struct sockaddr_in))
 			< 0) {
 		errorHandler("[-]Connection failed...");
-		close(sock);
+		closesocket(sock);
 		clearWinSock();
 		return -1;
 	}
 	//receive and display greet
-	buf = srecv(sock);
-	printf("%s\n", buf);
-
+	ssrecv(sock, buffer, BUFFERSIZE);
+	printf("%s\n", buffer);
+	fflush(stdin);
 	//leggo lettera dall stdin
-	char op;
+	char op = '\0';
 	printf("[+]Inserire operazione(a/s/m/d) : ");
+	fflush(stdin);
 	scanf("%c",&op);
-	ssend(sock, &op);
-	buf = srecv(sock);
-	printf("%s\n", buf);
+	buffer[0] = op;
+	buffer[1] = '\0';
+	ssend(sock, buffer);
+	ssrecv(sock, buffer, BUFFERSIZE);
+	printf("[+]%s\n", buffer);
 	int num1, num2;
-	if(strcmp(buf, "ADDIZIONE") == 0){
+	if(strcmp(buffer, "ADDIZIONE") == 0){
 		printf("[+]Inserisci due numeri da addizionare(num1 num2): ");
 		scanf("%d %d", &num1, &num2);
-	} else if (strcmp(buf, "SOTTRAZIONE") == 0){
+	} else if (strcmp(buffer, "SOTTRAZIONE") == 0){
 		printf("[+]Inserisci due numeri da sottrarre(num1 num2): ");
 		scanf("%d %d", &num1, &num2);
-	} else if (strcmp(buf, "MOLTIPLICAZIONE") == 0){
+	} else if (strcmp(buffer, "MOLTIPLICAZIONE") == 0){
 		printf("[+]Inserisci due numeri da moltiplicare(num1 num2): ");
 		scanf("%d %d", &num1, &num2);
-	} else if (strcmp(buf, "DIVISIONE") == 0){
+	} else if (strcmp(buffer, "DIVISIONE") == 0){
 		printf("[+]Inserisci due numeri da dividere(num1 num2): ");
 		scanf("%d %d", &num1, &num2);
 	} else{
 		printf("[-]Invalid type of operation...");
-		exit(-1);
+		clearWinSock();
+		closesocket(sock);
+		return -1;
 	}
-	sendInt(sock, num1);
-	sendInt(sock, num2);
-	int result = recvInt(sock);
-	printf("\n[+]Risultato: %d", result);
+	memcpy(buffer, (char*)&num1, sizeof(int));
+	buffer[4] = '\0';
+	ssend(sock, buffer);
+	memcpy(buffer, (char*)&num2, sizeof(int));
+	buffer[4] = '\0';
+	ssend(sock, buffer);
+
+	ssrecv(sock, buffer, BUFFERSIZE);
+	int result = *((int *)buffer);
+	printf("\n[+]Risultato: %d\n", result);
+
+	clearWinSock();
+	closesocket(sock);
+#if defined WIN32
+	system("pause");
+#endif
 	return 0;
 }
