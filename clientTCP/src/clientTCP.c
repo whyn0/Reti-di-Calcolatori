@@ -61,6 +61,7 @@ int main(void) {
 	ssrecv(sock, buffer, BUFFERSIZE);
 	printf("[+]%s\n", buffer);
 	int num1, num2;
+	int result = 0;
 	if(strcmp(buffer, "ADDIZIONE") == 0){
 		printf("[+]Inserisci due numeri da addizionare(num1 num2): ");
 		scanf("%d %d", &num1, &num2);
@@ -79,15 +80,10 @@ int main(void) {
 		closesocket(sock);
 		return -1;
 	}
-	memcpy(buffer, (char*)&num1, sizeof(int));
-	buffer[4] = '\0';
-	ssend(sock, buffer);
-	memcpy(buffer, (char*)&num2, sizeof(int));
-	buffer[4] = '\0';
-	ssend(sock, buffer);
+	sendInt(sock, num1);
+	sendInt(sock, num2);
+	recInt(sock, &result);
 
-	ssrecv(sock, buffer, BUFFERSIZE);
-	int result = *((int *)buffer);
 	printf("\n[+]Risultato: %d\n", result);
 
 	clearWinSock();

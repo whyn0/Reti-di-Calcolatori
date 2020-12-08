@@ -11,6 +11,7 @@
 #include <winsock.h>
 #include <windows.h>
 #else
+#define closesocket close
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -33,5 +34,5 @@ int recvAll(int socket, void* buffer);
 char* srecv(int socket);
 void ssend(int socket, void* buffer);
 void ssrecv(int socket, void* buffer, int size);
-//int recvInt(int socket);
-//void sendInt(int socket, int n);
+void recInt(int socket, int* num);
+void sendInt(int socket, int num);;
