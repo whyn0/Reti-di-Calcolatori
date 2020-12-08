@@ -87,4 +87,22 @@ void ssrecv(int socket, void* buffer, int size){
 		closesocket(socket);
 		clearWinSock();
 	}
+	printf("bytes : %d\n", b_rec);
 }
+void sendInt(int socket, int num){
+	char* ptr = (char*)&num;
+	if (send(socket, ptr, sizeof(int), 0) != sizeof(int)) {
+		errorHandler("[-]Send operation failed...");
+		closesocket(socket);
+		clearWinSock();
+	}
+}
+void recInt(int socket, int* num){
+	int b_rec = 0;
+	if((b_rec = recv(socket, (char*)num, sizeof(int), 0)) < 0 ){
+		errorHandler("[-]Recv operation failed...");
+		closesocket(socket);
+		clearWinSock();
+	}
+}
+

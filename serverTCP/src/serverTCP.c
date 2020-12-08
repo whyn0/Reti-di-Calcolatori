@@ -100,11 +100,9 @@ int main(int argc, char* argv[]) {
 
 	int num1;
 	int num2;
+	recInt(new_sock, &num1);
+	recInt(new_sock, &num2);
 
-	ssrecv(new_sock, buffer, BUFFERSIZE);
-	num1 = *((int *)buffer);
-	ssrecv(new_sock, buffer, BUFFERSIZE);
-	num2 = *((int *)buffer);
 	int result = 0;
 	if(op == 'A'){
 		result = num1 + num2;
@@ -117,10 +115,7 @@ int main(int argc, char* argv[]) {
 				result = num1 / num2;
 			}
 		}
-	memcpy(buffer, &result, sizeof(int));
-	buffer[4] = '\0';
-	ssend(new_sock, buffer);
-
+	sendInt(new_sock, result);
 	}
 	clearWinSock();
 	closesocket(new_sock);
