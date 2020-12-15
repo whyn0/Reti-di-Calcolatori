@@ -8,7 +8,33 @@
  ============================================================================
  */
 
-#include "commonlib.h"
+#ifndef COMMONLIB_H_
+#define COMMONLIB_H_
+#if defined WIN32
+#include <winsock.h>
+#include <windows.h>
+#else
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <netdb.h>
+#endif
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#endif /* COMMONLIB_H_ */
+
+#define ECHOMAX 512
+#define PORT 12345
+
+//prototypes
+
+void clearWinSock();
+void errorHandler(const char *errorMessage);
+void ssend(int sock, char* msg, int msg_len, struct sockaddr* addr, int addr_size);
+void srecv(int sock, char* buffer, int buf_len, struct sockaddr* addr, int* addr_size);
+
 
 void removeVowels(char* str);
 
@@ -28,7 +54,6 @@ int main(void) {
 	struct hostent *host;
 	unsigned int cliAddrLen;
 	char echoBuffer[ECHOMAX] = {'\0'};
-	int recvMsgSize;
 
 	if((server_sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0){
 		errorHandler("[-]socket() creation failed ...");
@@ -53,6 +78,7 @@ int main(void) {
 
 		printf("[+]Ricevuti dati dal client di nome: %s e di indirizzo: %s\n", host->h_name, inet_ntoa(echoClntAddr.sin_addr));
 
+		memset(&echoBuffer, '\0', ECHOMAX);
 		srecv(server_sock, echoBuffer,  ECHOMAX, (struct sockaddr*)&echoClntAddr, &cliAddrLen);
 
 		removeVowels(echoBuffer);
@@ -65,6 +91,7 @@ int main(void) {
 
 
 	clearWinSock();
+	closesocket(server_sock);
 	return EXIT_SUCCESS;
 }
 
@@ -82,3 +109,31 @@ void removeVowels(char* str){
 	memset(str, '\0', ECHOMAX);
 	strcpy(str, str1);
 }
+
+void errorHandler(const char *errorMessage){
+	printf("%s", errorMessage);
+}
+
+void clearWinSock(){
+#if defined WIN32
+	WSACleanup();
+#endif
+}
+
+void ssend(int sock, char* msg, int msg_len, struct sockaddr* addr, int addr_size){
+	if(sendto(sock, msg, msg_len, 0, addr, addr_size) != msg_len){
+		errorHandler("[-]ssend() fail");
+		close(sock);
+		clearWinSock();
+	}
+}
+void srecv(int sock, char* buffer, int buf_len, struct sockaddr* addr, int* addr_size){
+	if(recvfrom(sock, buffer, buf_len, 0, addr, addr_size) < 0){
+		errorHandler("[-]srecvfrom() fail...");
+		close(sock);
+		clearWinSock();
+	}
+	printf("%s", buffer);
+}
+
+

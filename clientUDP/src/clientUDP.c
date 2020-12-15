@@ -8,7 +8,33 @@
  ============================================================================
  */
 
-#include "commonlib.h"
+#ifndef COMMONLIB_H_
+#define COMMONLIB_H_
+#if defined WIN32
+#include <winsock.h>
+#include <windows.h>
+#else
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <netdb.h>
+#endif
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#endif /* COMMONLIB_H_ */
+
+#define ECHOMAX 512
+
+
+//prototypes
+
+void clearWinSock();
+void errorHandler(const char *errorMessage);
+void ssend(int sock, char* msg, int msg_len, struct sockaddr* addr, int addr_size);
+void srecv(int sock, char* buffer, int buf_len, struct sockaddr* addr, int* addr_size);
+
 
 
 int main(void) {
@@ -58,9 +84,12 @@ int main(void) {
 	int saddlen = sizeof(server_address);
 	ssend(client_socket, hello, strlen(hello), (struct sockaddr* )&server_address, sizeof(server_address));
 	//leggi stringa da stdin
+	printf("[+]Inserire messaggio da inviare: ");
 	scanf("%s", buffer);
 	char* str = malloc(strlen(buffer) * sizeof(char) + 1);
 	strcpy(str, buffer);
+	memset((str + strlen(str)), '\0', 1);
+	printf("%s", str);
 	//invia stringa al server
 	ssend(client_socket, str, strlen(str), (struct sockaddr* )&server_address, sizeof(server_address));
 	//riceve stringa senza vocali dal server
@@ -72,6 +101,39 @@ int main(void) {
 	printf("Stringa %s ricevuta dal server di nome: %s e indirizzo: %s\n", str, serv->h_name, inet_ntoa(server_address.sin_addr));
 
 	clearWinSock();
+	closesocket(client_socket);
+
+#if defined WIN32
+	system("pause");
+#endif
 	return EXIT_SUCCESS;
 }
+
+void errorHandler(const char *errorMessage){
+	printf("%s", errorMessage);
+}
+
+void clearWinSock(){
+#if defined WIN32
+	WSACleanup();
+#endif
+}
+
+void ssend(int sock, char* msg, int msg_len, struct sockaddr* addr, int addr_size){
+	if(sendto(sock, msg, msg_len, 0, addr, addr_size) != msg_len){
+		errorHandler("[-]ssend() fail");
+		close(sock);
+		clearWinSock();
+	}
+	printf("sent\n");
+}
+void srecv(int sock, char* buffer, int buf_len, struct sockaddr* addr, int* addr_size){
+	if(recvfrom(sock, buffer, buf_len, 0, addr, addr_size) < 0){
+		errorHandler("[-]srecvfrom() fail...");
+		close(sock);
+		clearWinSock();
+	}
+
+}
+
 
