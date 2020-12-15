@@ -57,7 +57,10 @@ int main(void) {
 
 		removeVowels(echoBuffer);
 
-		ssend(server_sock, echoBuffer, strlen(echoBuffer), (struct sockaddr*)&echoClntAddr, cliAddrLen);
+		ssend(server_sock, echoBuffer, strlen(echoBuffer) + 1, (struct sockaddr*)&echoClntAddr, cliAddrLen);
+
+		//zero echobuffer
+		memset(&echoBuffer, '\0', ECHOMAX);
 	}
 
 
@@ -76,5 +79,6 @@ void removeVowels(char* str){
 		}
 	}
 	memset((str1 + j), '\0', 1);
+	memset(str, '\0', ECHOMAX);
 	strcpy(str, str1);
 }
